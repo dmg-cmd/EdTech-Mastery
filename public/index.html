@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>EdTech Mastery - Jugador</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/client.css">
+</head>
+<body>
+    <div class="client-container">
+        <!-- Pantalla de Conexión -->
+        <section id="connection-screen" class="screen active">
+            <div class="connection-content">
+                <div class="logo">
+                    <svg viewBox="0 0 100 100" fill="none">
+                        <circle cx="50" cy="50" r="45" stroke="#3B82F6" stroke-width="3"/>
+                        <path d="M30 50 L45 65 L70 35" stroke="#10B981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h1>EdTech Mastery</h1>
+                <p class="subtitle">Diagnóstico de Competencias Digitales Docentes</p>
+
+                <form id="join-form" class="join-form">
+                    <div class="form-group">
+                        <label for="player-name">Tu Nombre</label>
+                        <input type="text" id="player-name" placeholder="Ingresa tu nombre" maxlength="30" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="player-specialty">Especialidad</label>
+                        <select id="player-specialty" required>
+                            <option value="">Selecciona tu área</option>
+                            <option value="matematicas">Matemáticas</option>
+                            <option value="ciencias">Ciencias Naturales</option>
+                            <option value="lenguaje">Lengua y Literatura</option>
+                            <option value="sociales">Ciencias Sociales</option>
+                            <option value="arte">Artes y Humanidades</option>
+                            <option value="informatica">Informática/Tecnología</option>
+                            <option value="idiomas">Idiomas</option>
+                            <option value="otra">Otra</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-join">
+                        <span>Unirse al Juego</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </button>
+                </form>
+
+                <div class="connection-status" id="connection-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Conectando...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pantalla de Espera -->
+        <section id="waiting-screen" class="screen">
+            <div class="waiting-content">
+                <div class="waiting-animation">
+                    <div class="pulse-circle"></div>
+                    <div class="checkmark">✓</div>
+                </div>
+                <h2>¡Conectado!</h2>
+                <p class="player-greeting" id="player-greeting">Bienvenido, nombre</p>
+                <p class="waiting-message">Esperando a que el profesor inicie el juego...</p>
+                
+                <div class="player-stats-preview">
+                    <div class="stat-preview">
+                        <span class="stat-icon">👥</span>
+                        <span class="stat-value" id="connected-players">0</span>
+                        <span class="stat-label">jugadores</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pantalla de Pregunta -->
+        <section id="question-screen" class="screen">
+            <header class="question-header">
+                <div class="header-top">
+                    <span class="player-info" id="header-player-name">Nombre</span>
+                    <span class="connection-indicator">● En línea</span>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <span class="stat-icon">⭐</span>
+                        <span class="stat-value" id="player-score">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🔥</span>
+                        <span class="stat-value" id="player-streak">0</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="question-content">
+                <div class="question-progress">
+                    <span class="progress-text" id="question-progress">1 / 10</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div class="timer-container" id="timer-container">
+                    <div class="timer-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="timer-bg" cx="50" cy="50" r="45"/>
+                            <circle class="timer-fill" cx="50" cy="50" r="45" id="timer-circle"/>
+                        </svg>
+                        <span class="timer-text" id="timer-text">30</span>
+                    </div>
+                </div>
+
+                <div class="question-card">
+                    <div class="category-badge" id="question-category">Categoría</div>
+                    <h2 class="question-text" id="question-text">Cargando pregunta...</h2>
+                    <p class="question-context" id="question-context"></p>
+                </div>
+
+                <div class="options-container" id="options-container">
+                    <!-- Opciones generadas dinámicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Pantalla de Feedback -->
+        <section id="feedback-screen" class="screen">
+            <div class="feedback-content" id="feedback-content">
+                <div class="feedback-icon" id="feedback-icon">✓</div>
+                <h2 class="feedback-title" id="feedback-title">¡Correcto!</h2>
+                <div class="feedback-points" id="feedback-points">+150 puntos</div>
+                <p class="feedback-explanation" id="feedback-explanation">
+                    La explicación de la respuesta...
+                </p>
+            </div>
+        </section>
+
+        <!-- Pantalla de Resultados -->
+        <section id="results-screen" class="screen">
+            <div class="results-content">
+                <div class="results-header">
+                    <h2>🎉 ¡Diagnóstico Completado!</h2>
+                    <p class="results-subtitle">EdTech Mastery</p>
+                </div>
+
+                <div class="final-score-card">
+                    <div class="score-circle">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="score-bg" cx="50" cy="50" r="45"/>
+                            <circle class="score-fill" cx="50" cy="50" r="45" id="final-score-circle"/>
+                        </svg>
+                        <div class="score-text">
+                            <span class="score-value" id="final-score">0</span>
+                            <span class="score-label">puntos</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-stats">
+                    <div class="stat-row">
+                        <span>Respuestas correctas:</span>
+                        <span class="stat-highlight" id="final-correct">0/0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Mejor racha:</span>
+                        <span class="stat-highlight" id="final-streak">0</span>
+                    </div>
+                </div>
+
+                <div class="level-badge" id="level-badge">
+                    <span class="level-icon">🎓</span>
+                    <span class="level-name" id="level-name">Explorador Digital</span>
+                </div>
+
+                <p class="level-description" id="level-description"></p>
+            </div>
+        </section>
+
+        <!-- Pantalla de Error -->
+        <section id="error-screen" class="screen">
+            <div class="error-content">
+                <div class="error-icon">⚠️</div>
+                <h2>Error de Conexión</h2>
+                <p id="error-message">No se pudo conectar al servidor</p>
+                <button class="btn-retry" id="btn-retry">Reintentar</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Aplicación Cliente -->
+    <script src="js/client.js"></script>
+</body>
+</html>

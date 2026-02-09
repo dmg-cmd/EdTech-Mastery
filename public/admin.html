@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EdTech Mastery - Panel del Profesor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-left">
+                <h1>🎓 EdTech Mastery</h1>
+                <span class="status-badge" id="connection-status">Conectado</span>
+            </div>
+            <div class="header-center">
+                <div class="game-status" id="game-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">En Lobby</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="player-count">
+                    <span class="count-icon">👥</span>
+                    <span class="count-number" id="player-count">0</span>
+                    <span class="count-label">jugadores</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Panel Principal -->
+        <main class="admin-main">
+            <!-- Vista Lobby -->
+            <section id="lobby-view" class="view active">
+                <div class="lobby-content">
+                    <div class="qr-section">
+                        <h2>📱 Conexión de Alumnos</h2>
+                        <p class="qr-instruction">Los alumnos deben escanear este código QR o acceder a la URL:</p>
+                        
+                        <div class="qr-container">
+                            <canvas id="qr-canvas"></canvas>
+                            <div class="url-display" id="connection-url">
+                                http://192.168.1.100:3000
+                            </div>
+                        </div>
+                        
+                        <div class="connection-info">
+                            <div class="info-item">
+                                <span class="info-label">Código de acceso:</span>
+                                <span class="info-value" id="room-code">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="players-section">
+                        <h2>👥 Jugadores Conectados</h2>
+                        <div class="players-list" id="players-list">
+                            <div class="empty-state">
+                                <span class="empty-icon">🔍</span>
+                                <p>Esperando jugadores...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="start-section">
+                        <button class="btn-primary btn-large" id="btn-start-game">
+                            <span class="btn-icon">▶️</span>
+                            Iniciar Juego
+                        </button>
+                        <p class="start-hint">Se necesitan al menos 1 jugador para comenzar</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vista Juego -->
+            <section id="game-view" class="view">
+                <div class="game-content">
+                    <!-- Panel Izquierdo: Pregunta -->
+                    <div class="question-panel">
+                        <div class="question-header">
+                            <span class="question-number" id="question-number">Pregunta 1/10</span>
+                            <span class="timer-display" id="timer-display">30s</span>
+                        </div>
+                        
+                        <div class="question-card">
+                            <div class="category-badge" id="question-category">Categoría</div>
+                            <h2 class="question-text" id="question-text">
+                                Cargando pregunta...
+                            </h2>
+                            <p class="question-context" id="question-context"></p>
+                        </div>
+
+                        <div class="question-controls">
+                            <button class="btn-secondary" id="btn-reveal">
+                                ✨ Revelar Respuesta
+                            </button>
+                            <button class="btn-primary" id="btn-next">
+                                Siguiente Pregunta →
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel Derecho: Estadísticas -->
+                    <div class="stats-panel">
+                        <h3>📊 Respuestas en Tiempo Real</h3>
+                        
+                        <div class="answer-chart">
+                            <div class="chart-row" data-index="0">
+                                <span class="option-label">A</span>
+                                <div class="option-bar-container">
+                                    <div class="option-bar" id="bar-0"></div>
+                                </div>
+                                <span class="option-count" id="count-0">0</span>
+                            </div>
+                            <div class="chart-row" data-index="1">
+                                <span class="option-label">B</span>
+                                <div class="option-bar-container">
+                                    <div class="option-bar" id="bar-1"></div>
+                                </div>
+                                <span class="option-count" id="count-1">0</span>
+                            </div>
+                            <div class="chart-row" data-index="2">
+                                <span class="option-label">C</span>
+                                <div class="option-bar-container">
+                                    <div class="option-bar" id="bar-2"></div>
+                                </div>
+                                <span class="option-count" id="count-2">0</span>
+                            </div>
+                            <div class="chart-row" data-index="3">
+                                <span class="option-label">D</span>
+                                <div class="option-bar-container">
+                                    <div class="option-bar" id="bar-3"></div>
+                                </div>
+                                <span class="option-count" id="count-3">0</span>
+                            </div>
+                        </div>
+
+                        <div class="response-stats">
+                            <div class="stat-row">
+                                <span>Respondieron:</span>
+                                <span id="answered-count">0 / 0</span>
+                            </div>
+                            <div class="stat-row highlight">
+                                <span>Sin responder:</span>
+                                <span id="pending-count">0</span>
+                            </div>
+                        </div>
+
+                        <div class="leaderboard-preview">
+                            <h4>🏆 Top 5</h4>
+                            <ol class="leaderboard-list" id="leaderboard-preview">
+                                <li class="empty">Esperando...</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel de Respuesta Revelada -->
+                <div class="answer-reveal-panel" id="answer-reveal">
+                    <div class="reveal-content">
+                        <div class="correct-answer">
+                            <span class="reveal-icon">✓</span>
+                            <span class="reveal-text">Respuesta Correcta</span>
+                            <span class="reveal-option" id="correct-option">B</span>
+                        </div>
+                        <p class="reveal-explanation" id="reveal-explanation">
+                            La explicación de la respuesta...
+                        </p>
+                        <div class="reveal-stats">
+                            <span class="stat correct">✅ <span id="reveal-correct">0</span> correctas</span>
+                            <span class="stat wrong">❌ <span id="reveal-wrong">0</span> incorrectas</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vista Resultados Finales -->
+            <section id="results-view" class="view">
+                <div class="results-content">
+                    <div class="results-header">
+                        <h2>🎉 ¡Juego Completado!</h2>
+                        <p class="results-summary" id="results-summary">
+                            Todos los participantes han completado el diagnóstico
+                        </p>
+                    </div>
+
+                    <div class="results-grid">
+                        <!-- Ganador -->
+                        <div class="winner-card">
+                            <div class="winner-crown">👑</div>
+                            <div class="winner-avatar">🏆</div>
+                            <h3 class="winner-name" id="winner-name">-</h3>
+                            <p class="winner-score" id="winner-score">0 puntos</p>
+                        </div>
+
+                        <!-- Estadísticas Generales -->
+                        <div class="general-stats">
+                            <div class="stat-card">
+                                <span class="stat-value" id="total-players">0</span>
+                                <span class="stat-label">Participantes</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-value" id="avg-score">0</span>
+                                <span class="stat-label">Promedio</span>
+                            </div>
+                            <div class="stat-card">
+                                <span class="stat-value" id="avg-correct">0%</span>
+                                <span class="stat-label">Aciertos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Posiciones -->
+                    <div class="final-leaderboard">
+                        <h3>📋 Clasificación Final</h3>
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre</th>
+                                    <th>Especialidad</th>
+                                    <th>Aciertos</th>
+                                    <th>Puntos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="final-leaderboard-body">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Estadísticas por Categoría -->
+                    <div class="category-results">
+                        <h3>📊 Desempeño por Categoría</h3>
+                        <div class="category-bars" id="category-bars">
+                        </div>
+                    </div>
+
+                    <div class="results-actions">
+                        <button class="btn-secondary" id="btn-export-results">
+                            📥 Exportar Resultados
+                        </button>
+                        <button class="btn-primary" id="btn-restart-game">
+                            🔄 Nueva Partida
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Biblioteca QR Code -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Aplicación Admin -->
+    <script src="js/admin.js"></script>
+</body>
+</html>

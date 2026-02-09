@@ -1,0 +1,24 @@
+{
+  "name": "edtech-mastery-lan",
+  "version": "1.0.0",
+  "description": "Sistema de diagnóstico de competencias digitales docentes para red LAN",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "install-deps": "npm install"
+  },
+  "keywords": [
+    "education",
+    "quiz",
+    "gamification",
+    "lan",
+    "socket.io"
+  ],
+  "author": "MiniMax Agent",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "ip": "^1.1.8"
+  }
+}
