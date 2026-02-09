@@ -1,30 +1,31 @@
 @echo off
-chcp 65001 >nul
+chcp 850 >nul
 title EdTech Mastery - Servidor LAN
 cls
 
 echo.
 echo ================================================
-echo   🎓 EdTech Mastery - Inicio del Servidor
+echo      EdTech Mastery - Inicio del Servidor
 echo ================================================
 echo.
 
-REM Cambiar al directorio del script
+REM Cambiar al directorio del script (con comillas por si hay espacios)
 cd /d "%~dp0"
-echo 📁 Carpeta actual: %cd%
+
+echo Carpeta actual: %cd%
 echo.
 
-REM Verificar si Node.js está instalado
+REM Verificar si Node.js esta instalado
 echo [1/5] Verificando Node.js...
 node --version >nul 2>&1
 if errorlevel 1 (
     echo.
-    echo ❌ ERROR: Node.js NO está instalado.
+    echo ERROR: Node.js NO esta instalado.
     echo.
     echo Por favor, descarga e instala Node.js desde:
-    echo   👉 https://nodejs.org/es/download/
+    echo    https://nodejs.org/es/download/
     echo.
-    echo Elije "Windows (.msi)"版本 para Windows.
+    echo Elige "Windows (.msi)" para Windows.
     echo.
     echo Despues de instalar, REINICIA tu computadora.
     echo.
@@ -32,76 +33,64 @@ if errorlevel 1 (
     exit /b 1
 )
 for /f "delims=" %%a in ('node --version') do set NODE_VERSION=%%a
-echo ✅ Node.js detectado: %NODE_VERSION%
+echo OK: Node.js detectado: %NODE_VERSION%
 echo.
 
 REM Verificar e instalar dependencias
 echo [2/5] Verificando dependencias...
 if not exist "node_modules" (
-    echo 📦 node_modules NO existe.
-    echo ⏳ Instalando dependencias (puede tomar unos segundos)...
+    echo No existe node_modules.
+    echo Instalando dependencias...
     echo.
-    npm install
+    call npm install
     if errorlevel 1 (
         echo.
-        echo ❌ ERROR al instalar dependencias.
+        echo ERROR al instalar dependencias.
         echo.
         pause
         exit /b 1
     )
     echo.
-    echo ✅ Dependencias instaladas correctamente.
+    echo OK: Dependencias instaladas.
 ) else (
-    echo ✅ Dependencias ya instaladas.
+    echo OK: Dependencias ya instaladas.
 )
 echo.
 
-REM Obtener dirección IP local
+REM Obtener direccion IP local
 echo [3/5] Detectando red local...
-set LOCAL_IP=No detectada
+set LOCAL_IP=localhost
 for /f "tokens=14 delims= " %%a in ('ipconfig ^| findstr /c:"IPv4" ^| findstr /c:"192.168"') do set LOCAL_IP=%%a
-if "%LOCAL_IP%"=="No detectada" set LOCAL_IP=localhost
-echo ✅ Tu IP local: %LOCAL_IP%
+echo OK: Tu IP local: %LOCAL_IP%
 echo.
 
-REM Mostrar información antes de iniciar
-echo [4/5] Preparando servidor...
+REM Mostrar informacion
+echo [4/5] Servidor listo.
 echo.
 echo ================================================
-echo   ✅ SERVIDOR LISTO PARA INICIAR
+echo      SERVIDOR LISTO PARA INICIAR
 echo ================================================
 echo.
-echo 📡 ACCESO PARA ALUMNOS (teléfonos):
-echo    http://%LOCAL_IP%:3000
+echo Para ALUMNOS (telefonos): http://%LOCAL_IP%:3000
+echo Para PROFESOR (tu PC):    http://%LOCAL_IP%:3000/admin
 echo.
-echo 🖥️  PANEL DEL PROFESOR:
-echo    http://%LOCAL_IP%:3000/admin
-echo.
-echo 💡 Los alumnos deben conectarse a la misma red WiFi
-echo    y escanear el código QR que aparecerá.
-echo.
-echo ⏸️  El servidor iniciará en 3 segundos...
+echo Los alumnos deben conectarse a la MISMA red WiFi.
 echo.
 pause
 
-REM Iniciar el servidor
 echo [5/5] Iniciando servidor...
 echo.
 echo ================================================
-echo   🎓 EdTech Mastery CORRIENDO
+echo      EdTech Mastery CORRIENDO
 echo ================================================
 echo.
-echo ⏹️  Presiona Ctrl+C para detener el servidor
-echo.
+echo Presiona Ctrl+C para detener el servidor.
 echo.
 
 REM Ejecutar el servidor
 node server.js
 
-REM Si llega aquí, el servidor se cerró
+REM Si llega aqui, el servidor se cerro
 echo.
-echo ================================================
-echo   ⚠️  El servidor se detuvo
-echo ================================================
-echo.
+echo El servidor se detuvo.
 pause
