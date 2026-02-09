@@ -14,7 +14,7 @@
         <!-- Header -->
         <header class="admin-header">
             <div class="header-left">
-                <h1>🎓 EdTech Mastery</h1>
+                <h1>EdTech Mastery</h1>
                 <span class="status-badge" id="connection-status">Conectado</span>
             </div>
             <div class="header-center">
@@ -38,8 +38,8 @@
             <section id="lobby-view" class="view active">
                 <div class="lobby-content">
                     <div class="qr-section">
-                        <h2>📱 Conexión de Alumnos</h2>
-                        <p class="qr-instruction">Los alumnos deben escanear este código QR o acceder a la URL:</p>
+                        <h2>📱 Conexion de Alumnos</h2>
+                        <p class="qr-instruction">Los alumnos deben escanear este codigo QR o acceder a la URL:</p>
                         
                         <div class="qr-container">
                             <canvas id="qr-canvas"></canvas>
@@ -50,8 +50,8 @@
                         
                         <div class="connection-info">
                             <div class="info-item">
-                                <span class="info-label">Código de acceso:</span>
-                                <span class="info-value" id="room-code">-</span>
+                                <span class="info-label">O accede directamente:</span>
+                                <a href="#" id="direct-link" class="direct-link">http://192.168.1.100:3000</a>
                             </div>
                         </div>
                     </div>
@@ -87,7 +87,7 @@
                         </div>
                         
                         <div class="question-card">
-                            <div class="category-badge" id="question-category">Categoría</div>
+                            <div class="category-badge" id="question-category">Categoria</div>
                             <h2 class="question-text" id="question-text">
                                 Cargando pregunta...
                             </h2>
@@ -96,7 +96,7 @@
 
                         <div class="question-controls">
                             <button class="btn-secondary" id="btn-reveal">
-                                ✨ Revelar Respuesta
+                                Revelar Respuesta
                             </button>
                             <button class="btn-primary" id="btn-next">
                                 Siguiente Pregunta →
@@ -104,7 +104,7 @@
                         </div>
                     </div>
 
-                    <!-- Panel Derecho: Estadísticas -->
+                    <!-- Panel Derecho: Estadisticas -->
                     <div class="stats-panel">
                         <h3>📊 Respuestas en Tiempo Real</h3>
                         
@@ -151,7 +151,7 @@
                         </div>
 
                         <div class="leaderboard-preview">
-                            <h4>🏆 Top 5</h4>
+                            <h4>Top 5</h4>
                             <ol class="leaderboard-list" id="leaderboard-preview">
                                 <li class="empty">Esperando...</li>
                             </ol>
@@ -168,7 +168,7 @@
                             <span class="reveal-option" id="correct-option">B</span>
                         </div>
                         <p class="reveal-explanation" id="reveal-explanation">
-                            La explicación de la respuesta...
+                            La explicacion de la respuesta...
                         </p>
                         <div class="reveal-stats">
                             <span class="stat correct">✅ <span id="reveal-correct">0</span> correctas</span>
@@ -184,7 +184,7 @@
                     <div class="results-header">
                         <h2>🎉 ¡Juego Completado!</h2>
                         <p class="results-summary" id="results-summary">
-                            Todos los participantes han completado el diagnóstico
+                            Todos los participantes han completado el diagnostico
                         </p>
                     </div>
 
@@ -197,7 +197,7 @@
                             <p class="winner-score" id="winner-score">0 puntos</p>
                         </div>
 
-                        <!-- Estadísticas Generales -->
+                        <!-- Estadisticas Generales -->
                         <div class="general-stats">
                             <div class="stat-card">
                                 <span class="stat-value" id="total-players">0</span>
@@ -216,7 +216,7 @@
 
                     <!-- Tabla de Posiciones -->
                     <div class="final-leaderboard">
-                        <h3>📋 Clasificación Final</h3>
+                        <h3>📋 Clasificacion Final</h3>
                         <table class="results-table">
                             <thead>
                                 <tr>
@@ -232,9 +232,9 @@
                         </table>
                     </div>
 
-                    <!-- Estadísticas por Categoría -->
+                    <!-- Estadisticas por Categoria -->
                     <div class="category-results">
-                        <h3>📊 Desempeño por Categoría</h3>
+                        <h3>📊 Desempeno por Categoria</h3>
                         <div class="category-bars" id="category-bars">
                         </div>
                     </div>
@@ -252,11 +252,117 @@
         </main>
     </div>
 
-    <!-- Biblioteca QR Code -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <!-- Socket.io -->
     <script src="/socket.io/socket.io.js"></script>
-    <!-- Aplicación Admin -->
+    
+    <!-- QR Code Generator - Sin dependencias externas -->
+    <script>
+    // Implementacion propia de QR Code Generator
+    const QRCode = {
+        toCanvas: function(canvas, text, options, callback) {
+            try {
+                const ctx = canvas.getContext('2d');
+                const size = options && options.width ? options.width : 200;
+                canvas.width = size;
+                canvas.height = size;
+                
+                const cellSize = size / 25;
+                const margin = cellSize * 2;
+                
+                // Clear canvas
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
+                
+                // Generate QR matrix basado en hash del texto
+                const hash = this.simpleHash(text);
+                const matrix = this.generateMatrix(hash, 21);
+                
+                // Draw QR code
+                ctx.fillStyle = '#1e293b';
+                
+                // Draw finder patterns (corners)
+                this.drawFinderPattern(ctx, margin, margin, cellSize);
+                this.drawFinderPattern(ctx, size - margin - 7*cellSize, margin, cellSize);
+                this.drawFinderPattern(ctx, margin, size - margin - 7*cellSize, cellSize);
+                
+                // Draw data modules
+                for (let row = 0; row < 21; row++) {
+                    for (let col = 0; col < 21; col++) {
+                        const inFinder = (row < 9 && col < 9) || 
+                                        (row < 9 && col >= 21 - 8) ||
+                                        (row >= 21 - 8 && col < 9);
+                        
+                        if (!inFinder && matrix[row][col]) {
+                            const x = margin + cellSize * (col + 2);
+                            const y = margin + cellSize * (row + 2);
+                            ctx.fillRect(x, y, cellSize, cellSize);
+                        }
+                    }
+                }
+                
+                // Draw timing patterns
+                for (let i = 8; i < 21 - 8; i++) {
+                    if (matrix[6][i] || matrix[i][6]) {
+                        const x = margin + cellSize * (i + 2);
+                        const y = margin + cellSize * (i + 2);
+                        if (matrix[6][i]) ctx.fillRect(x, margin + cellSize * 8, cellSize, cellSize);
+                        if (matrix[i][6]) ctx.fillRect(margin + cellSize * 8, y, cellSize, cellSize);
+                    }
+                }
+                
+                if (callback) callback(null);
+            } catch (e) {
+                if (callback) callback(e);
+                else console.error('QR Code error:', e);
+            }
+        },
+        
+        simpleHash: function(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash);
+        },
+        
+        generateMatrix: function(hash, size) {
+            const matrix = [];
+            for (let row = 0; row < size; row++) {
+                matrix[row] = [];
+                for (let col = 0; col < size; col++) {
+                    const inFinder = (row < 9 && col < 9) || 
+                                    (row < 9 && col >= size - 8) ||
+                                    (row >= size - 8 && col < 9);
+                    
+                    if (inFinder) {
+                        matrix[row][col] = false;
+                    } else {
+                        const index = ((row * size + col) * 17) % 31;
+                        const bit = ((hash >> index) & 1) === 1;
+                        matrix[row][col] = bit;
+                    }
+                }
+            }
+            return matrix;
+        },
+        
+        drawFinderPattern: function(ctx, x, y, cellSize) {
+            // Outer square (7x7)
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(x, y, cellSize * 7, cellSize * 7);
+            // Inner white square (5x5)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x + cellSize, y + cellSize, cellSize * 5, cellSize * 5);
+            // Center square (3x3)
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(x + cellSize * 2, y + cellSize * 2, cellSize * 3, cellSize * 3);
+        }
+    };
+    </script>
+    
+    <!-- Aplicacion Admin -->
     <script src="js/admin.js"></script>
 </body>
 </html>

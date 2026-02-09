@@ -9,7 +9,6 @@ echo    EdTech Mastery - Inicio del Servidor
 echo ====================================
 echo.
 
-REM Cambiar al directorio del script
 cd /d "%~dp0"
 
 echo [1/5] Verificando Node.js...
@@ -28,22 +27,19 @@ echo [2/5] Detectando direcciones IP...
 echo.
 echo Lista de direcciones IP disponibles:
 echo.
+
 set count=0
 setlocal EnableDelayedExpansion
 
-for /f "tokens=14" %%a in ('ipconfig ^| findstr /c:"IPv4" ^| findstr /c:"192.168"') do (
-    set /a count+=1
-    echo   [!count!] %%a
-    set ip!count!=%%a
-)
-
-if !count! equ 0 (
-    echo   No se encontraron IPs en red 192.168.x.x
-    echo   Buscando otras IPs...
-    for /f "tokens=14" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
-        set /a count+=1
-        echo   [!count!] %%a
-        set ip!count!=%%a
+for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do (
+    set ip=%%a
+    set ip=!ip: =!
+    if not "!ip!"=="" (
+        if not "!ip!"==":" (
+            set /a count+=1
+            echo   [!count!] !ip!
+            set ip!count!=!ip!
+        )
     )
 )
 
@@ -63,6 +59,7 @@ if "!ip%selected%!"=="" (
 )
 
 set LOCAL_IP=!ip%selected%!
+set LOCAL_IP=!LOCAL_IP: =!
 echo.
 echo OK: IP seleccionada: %LOCAL_IP%
 echo.
