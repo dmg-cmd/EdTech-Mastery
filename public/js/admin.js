@@ -31,6 +31,7 @@ class EdTechAdmin {
         // Elementos de lobby
         this.connectionUrl = document.getElementById('connection-url');
         this.qrCanvas = document.getElementById('qr-canvas');
+        this.directLink = document.getElementById('direct-link');
         this.roomCode = document.getElementById('room-code');
         this.playersList = document.getElementById('players-list');
         this.playerCountEl = document.getElementById('player-count');
@@ -94,6 +95,8 @@ class EdTechAdmin {
         this.socket.on('connect', () => {
             console.log('Conectado como administrador');
             this.socket.emit('admin-join');
+            // Generar QR después de conectarse
+            this.generateQRCode();
         });
 
         this.socket.on('disconnect', () => {
@@ -140,9 +143,6 @@ class EdTechAdmin {
         this.socket.on('final-results', (data) => {
             this.showFinalResults(data);
         });
-
-        // Generar código QR
-        this.generateQRCode();
     }
 
     // ========================================
@@ -155,6 +155,12 @@ class EdTechAdmin {
         
         const url = `http://${this.serverIp}:${this.serverPort}`;
         this.connectionUrl.textContent = url;
+        
+        // Actualizar también el enlace directo
+        if (this.directLink) {
+            this.directLink.textContent = url;
+            this.directLink.href = url;
+        }
 
         // Generar código QR
         QRCode.toCanvas(this.qrCanvas, url, {
@@ -419,6 +425,9 @@ class EdTechAdmin {
         }
 
         this.updatePlayersList(data.players || []);
+        
+        // Regenerar QR code para asegurar IP correcta
+        this.generateQRCode();
     }
 
     updateGameStatus(status) {
