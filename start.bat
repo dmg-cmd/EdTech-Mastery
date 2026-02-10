@@ -58,11 +58,16 @@ if "!ip%selected%!"=="" (
     exit
 )
 
-set LOCAL_IP=!ip%selected%!
-set LOCAL_IP=!LOCAL_IP: =!
+set "LOCAL_IP=!ip%selected%!"
+set "LOCAL_IP=!LOCAL_IP: =!"
+setx LOCAL_IP "%LOCAL_IP%"
+
 echo.
 echo OK: IP seleccionada: %LOCAL_IP%
 echo.
+
+REM Configurar variable de entorno para el servidor
+setx SERVER_IP "%LOCAL_IP%" >nul
 
 REM Verificar dependencias
 echo [3/5] Verificando dependencias...

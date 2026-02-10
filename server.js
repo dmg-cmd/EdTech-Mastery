@@ -17,7 +17,8 @@ const io = new Server(server);
 
 // Configuración del servidor
 const PORT = process.env.PORT || 3000;
-const LOCAL_IP = ip.address();
+// Usar IP especificada por变量 de entorno, o detectar automáticamente
+const LOCAL_IP = process.env.SERVER_IP || ip.address();
 
 // Almacenar preguntas (se puede mover a archivo separado)
 const questions = require('./public/js/questions.js');
