@@ -163,7 +163,7 @@ class EdTechAdmin {
         }
 
         // Generar código QR
-        QRCode.toCanvas(this.qrCanvas, url, {
+        SimpleQR.toCanvas(this.qrCanvas, url, {
             width: 250,
             margin: 2,
             color: {

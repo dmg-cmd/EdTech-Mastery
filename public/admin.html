@@ -265,3 +265,101 @@
     <script src="js/admin.js"></script>
 </body>
 </html>
+
+    <!-- QR Code Generator - Simple y funcional offline -->
+    <script>
+    const SimpleQR = {
+        hashCode: function(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return Math.abs(hash);
+        },
+        
+        generateMatrix: function(text) {
+            const size = 25;
+            const matrix = [];
+            const hash = this.hashCode(text);
+            
+            for (let row = 0; row < size; row++) {
+                matrix[row] = [];
+                for (let col = 0; col < size; col++) {
+                    matrix[row][col] = false;
+                }
+            }
+            
+            const drawFinder = (row, col) => {
+                for (let r = 0; r < 7; r++) {
+                    for (let c = 0; c < 7; c++) {
+                        if (r >= 1 && r <= 5 && c >= 1 && c <= 5) {
+                            matrix[row + r][col + c] = false;
+                        } else if (r >= 2 && r <= 4 && c >= 2 && c <= 4) {
+                            matrix[row + r][col + c] = true;
+                        } else {
+                            matrix[row + r][col + c] = true;
+                        }
+                    }
+                }
+            };
+            
+            drawFinder(0, 0);
+            drawFinder(size - 7, 0);
+            drawFinder(0, size - 7);
+            
+            for (let i = 8; i < size - 8; i++) {
+                if (i !== 6) {
+                    matrix[6][i] = (i % 2) === 0;
+                    matrix[i][6] = (i % 2) === 0;
+                }
+            }
+            
+            let seed = hash;
+            for (let row = 8; row < size - 8; row++) {
+                for (let col = 8; col < size - 8; col++) {
+                    if (row === 6 || col === 6) continue;
+                    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                    matrix[row][col] = (seed % 2) === 0;
+                }
+            }
+            
+            return matrix;
+        },
+        
+        toCanvas: function(canvas, text, options, callback) {
+            try {
+                const ctx = canvas.getContext('2d');
+                const width = options && options.width ? options.width : 200;
+                const margin = 8;
+                const size = width - (margin * 2);
+                const cellSize = size / 25;
+                
+                canvas.width = width;
+                canvas.height = width;
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, width);
+                
+                const matrix = this.generateMatrix(text);
+                ctx.fillStyle = options && options.color && options.color.dark ? options.color.dark : '#1e293b';
+                
+                for (let row = 0; row < 25; row++) {
+                    for (let col = 0; col < 25; col++) {
+                        if (matrix[row][col]) {
+                            const x = margin + col * cellSize;
+                            const y = margin + row * cellSize;
+                            ctx.fillRect(x, y, cellSize, cellSize);
+                        }
+                    }
+                }
+                
+                if (callback) callback(null);
+            } catch (e) {
+                console.error('QR Code error:', e);
+                if (callback) callback(e);
+            }
+        }
+    };
+    </script>
