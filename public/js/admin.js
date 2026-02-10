@@ -162,19 +162,29 @@ class EdTechAdmin {
             this.directLink.href = url;
         }
 
-        // Generar código QR
-        SimpleQR.toCanvas(this.qrCanvas, url, {
-            width: 250,
-            margin: 2,
-            color: {
-                dark: '#1e293b',
-                light: '#ffffff'
+        // Generar código QR usando la libreria qrcode
+        try {
+            var qr = qrcode(0, 'L');
+            qr.addData(url);
+            qr.make();
+            var moduleCount = qr.getModuleCount();
+            var cellSize = 250 / moduleCount;
+            var ctx = this.qrCanvas.getContext('2d');
+            this.qrCanvas.width = 250;
+            this.qrCanvas.height = 250;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 250, 250);
+            ctx.fillStyle = '#1e293b';
+            for (var row = 0; row < moduleCount; row++) {
+                for (var col = 0; col < moduleCount; col++) {
+                    if (qr.isDark(row, col)) {
+                        ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                    }
+                }
             }
-        }, (error) => {
-            if (error) {
-                console.error('Error generando QR:', error);
-            }
-        });
+        } catch (error) {
+            console.error('Error generando QR:', error);
+        }
 
         // Generar código de acceso
         this.roomCode.textContent = this.generateRoomCode();
