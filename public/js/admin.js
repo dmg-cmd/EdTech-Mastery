@@ -33,9 +33,28 @@ class EdTechAdmin {
         this.qrCanvas = document.getElementById('qr-canvas');
         this.directLink = document.getElementById('direct-link');
         this.roomCode = document.getElementById('room-code');
+        this.btnStartGame = document.getElementById('btn-start-game');
+        this.quizTopicInput = document.getElementById('quiz-topic');
+        this.topicHistoryList = document.getElementById('topic-history-list');
+        this.courseSelect = document.getElementById('course-select');
         this.playersList = document.getElementById('players-list');
         this.playerCountEl = document.getElementById('player-count');
-        this.btnStartGame = document.getElementById('btn-start-game');
+
+        // Elementos de selección de IP
+        this.ipSelectorContainer = document.getElementById('ip-selector-container');
+        this.ipSelect = document.getElementById('ip-select');
+
+        // AI Panel Elements
+        this.aiPanel = document.getElementById('ai-generator-panel');
+        this.aiTopicInput = document.getElementById('ai-topic');
+        this.aiCountInput = document.getElementById('ai-question-count');
+        this.btnGenerateAI = document.getElementById('btn-generate-ai');
+        this.aiStatus = document.getElementById('ai-status');
+
+        // Question count panel (regular)
+        this.bankCountSelector = document.getElementById('bank-count-selector');
+        this.questionCountInput = document.getElementById('question-count');
+        this.maxQuestionsHint = document.getElementById('max-questions-hint');
 
         // Elementos de juego
         this.questionNumberEl = document.getElementById('question-number');
@@ -70,17 +89,142 @@ class EdTechAdmin {
         // Barra de estado
         this.gameStatusEl = document.querySelector('.game-status');
         this.gameStatusText = this.gameStatusEl.querySelector('.status-text');
+
+        // Modales de ayuda
+        this.apiHelpModal = document.getElementById('api-help-modal');
+        this.linkApiHelp = document.getElementById('link-api-help');
+        this.btnCloseHelp = document.getElementById('btn-close-help');
+        this.btnCloseApiIcon = document.getElementById('close-api-help');
+        this.btnGoToConfig = document.getElementById('btn-go-to-config');
+
+        // Modal de Configuración API (Nuevo)
+        this.apiConfigModal = document.getElementById('api-config-modal');
+        this.apiKeyInput = document.getElementById('api-key-input');
+        this.btnSaveApiKey = document.getElementById('btn-save-api-key');
+        this.btnShowHelp = document.getElementById('btn-show-help');
+        this.btnCloseApiConfig = document.getElementById('close-api-config');
+
+        this.hasApiKey = false;
     }
 
     // ========================================
     // Inicialización de Event Listeners
     // ========================================
     initEventListeners() {
-        this.btnStartGame.addEventListener('click', () => this.startGame());
-        this.btnReveal.addEventListener('click', () => this.revealAnswer());
-        this.btnNext.addEventListener('click', () => this.nextQuestion());
-        this.btnExportResults.addEventListener('click', () => this.exportResults());
-        this.btnRestartGame.addEventListener('click', () => this.restartGame());
+        if (this.btnStartGame) this.btnStartGame.addEventListener('click', () => this.startGame());
+        if (this.btnReveal) this.btnReveal.addEventListener('click', () => this.revealAnswer());
+        if (this.btnNext) this.btnNext.addEventListener('click', () => this.nextQuestion());
+        if (this.btnExportResults) this.btnExportResults.addEventListener('click', () => this.exportResults());
+        if (this.btnRestartGame) this.btnRestartGame.addEventListener('click', () => this.restartGame());
+
+        // Lógica de Temas y Historial
+        if (this.quizTopicInput) {
+            this.quizTopicInput.addEventListener('input', () => {
+                const topic = this.quizTopicInput.value.trim();
+                const baseCategories = [
+                    'Pedagogía Digital',
+                    'Competencias Digitales Docentes',
+                    'Herramientas Tecnológicas',
+                    'Tendencias Actuales',
+                    'all'
+                ];
+
+                // Si no coincide con categorías base, mostrar panel IA
+                const isBaseCategory = baseCategories.some(c => c.toLowerCase() === topic.toLowerCase());
+
+                if (topic !== '' && !isBaseCategory) {
+                    this.aiPanel.style.display = 'block';
+                    this.bankCountSelector.style.display = 'none';
+                    // Sincronizar con el input oculto de la IA si aún existe
+                    if (this.aiTopicInput) this.aiTopicInput.value = topic;
+                } else {
+                    this.aiPanel.style.display = 'none';
+                    this.bankCountSelector.style.display = 'block';
+                    if (isBaseCategory) {
+                        this.updateMaxQuestionsHint(topic);
+                    }
+                }
+            });
+        }
+
+        if (this.ipSelect) {
+            this.ipSelect.addEventListener('change', () => {
+                this.serverIp = this.ipSelect.value;
+                localStorage.setItem('selectedServerIp', this.serverIp);
+                this.generateQRCode();
+            });
+        }
+
+        if (this.courseSelect) {
+            this.courseSelect.addEventListener('change', () => {
+                const courseId = this.courseSelect.value;
+                this.socket.emit('admin-select-course', { courseId });
+            });
+        }
+
+        if (this.btnGenerateAI) {
+            this.btnGenerateAI.addEventListener('click', () => this.generateAIQuestions());
+        }
+
+        // Eventos de Modal de Ayuda
+        if (this.linkApiHelp) {
+            this.linkApiHelp.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.apiConfigModal.style.display = 'block';
+            });
+        }
+
+        if (this.btnGoToConfig) {
+            this.btnGoToConfig.addEventListener('click', () => {
+                this.apiHelpModal.style.display = 'none';
+                this.apiConfigModal.style.display = 'block';
+            });
+        }
+
+        if (this.btnCloseHelp) {
+            this.btnCloseHelp.addEventListener('click', () => {
+                this.apiHelpModal.style.display = 'none';
+            });
+        }
+
+        if (this.btnCloseApiIcon) {
+            this.btnCloseApiIcon.addEventListener('click', () => {
+                this.apiHelpModal.style.display = 'none';
+            });
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === this.apiHelpModal) {
+                this.apiHelpModal.style.display = 'none';
+            }
+            if (e.target === this.apiConfigModal) {
+                this.apiConfigModal.style.display = 'none';
+            }
+        });
+
+        if (this.btnSaveApiKey) {
+            this.btnSaveApiKey.addEventListener('click', () => {
+                const apiKey = this.apiKeyInput.value.trim();
+                if (apiKey) {
+                    this.socket.emit('admin-save-api-key', { apiKey });
+                } else {
+                    alert('Por favor, ingresa una clave válida');
+                }
+            });
+        }
+
+        if (this.btnShowHelp) {
+            this.btnShowHelp.addEventListener('click', () => {
+                this.apiConfigModal.style.display = 'none';
+                this.apiHelpModal.style.display = 'block';
+            });
+        }
+
+        if (this.btnCloseApiConfig) {
+            this.btnCloseApiConfig.addEventListener('click', () => {
+                this.apiConfigModal.style.display = 'none';
+            });
+        }
     }
 
     // ========================================
@@ -143,19 +287,68 @@ class EdTechAdmin {
         this.socket.on('final-results', (data) => {
             this.showFinalResults(data);
         });
+
+        this.socket.on('ai-generated', (data) => {
+            this.btnGenerateAI.disabled = false;
+            if (data.success) {
+                this.aiStatus.innerHTML = `✅ ¡Listo! Se generaron ${data.count} preguntas sobre "${data.topic}"`;
+                this.aiStatus.style.color = 'var(--accent)';
+                if (data.topicHistory) {
+                    this.updateTopicHistory(data.topicHistory);
+                }
+            } else {
+                this.aiStatus.innerHTML = '❌ Error: ' + data.error;
+                this.aiStatus.style.color = 'var(--danger)';
+                // Si el error es por falta de API Key, ofrecer configurar
+                if (data.error.includes('Key') || data.error.includes('configurado')) {
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.style.color = 'var(--primary)';
+                    link.style.display = 'block';
+                    link.style.marginTop = '5px';
+                    link.textContent = 'Configurar API Key ahora';
+                    link.onclick = (e) => {
+                        e.preventDefault();
+                        this.apiConfigModal.style.display = 'block';
+                    };
+                    this.aiStatus.appendChild(link);
+                }
+            }
+        });
+
+        this.socket.on('api-key-saved', (data) => {
+            if (data.success) {
+                this.hasApiKey = true;
+                this.apiConfigModal.style.display = 'none';
+                this.aiStatus.textContent = '✅ API Key configurada correctamente.';
+                this.aiStatus.style.color = 'var(--accent)';
+                alert('API Key de Gemini guardada correctamente.');
+            } else {
+                alert('Error al guardar la clave: ' + data.error);
+            }
+        });
+
+        this.socket.on('topic-history-updated', (history) => {
+            this.updateTopicHistory(history);
+        });
     }
 
     // ========================================
     // Funciones de Lobby
     // ========================================
     generateQRCode() {
-        // Obtener IP del servidor
-        this.serverIp = window.location.hostname;
+        // Usar la IP seleccionada en el dropdown si existe, si no usar hostname actual
+        if (this.ipSelect && this.ipSelect.value) {
+            this.serverIp = this.ipSelect.value;
+        } else if (!this.serverIp || this.serverIp === 'localhost' || this.serverIp === '127.0.0.1') {
+            this.serverIp = window.location.hostname;
+        }
+
         this.serverPort = window.location.port || 3000;
-        
+
         const url = `http://${this.serverIp}:${this.serverPort}`;
         this.connectionUrl.textContent = url;
-        
+
         // Actualizar también el enlace directo
         if (this.directLink) {
             this.directLink.textContent = url;
@@ -211,7 +404,6 @@ class EdTechAdmin {
                 <div class="player-avatar">${player.name.charAt(0).toUpperCase()}</div>
                 <div class="player-info">
                     <div class="player-name">${player.name}</div>
-                    <div class="player-specialty">${player.specialty}</div>
                 </div>
                 <div style="font-weight: 600; color: var(--primary);">${player.score} pts</div>
             </div>
@@ -220,11 +412,57 @@ class EdTechAdmin {
         this.btnStartGame.disabled = false;
     }
 
-    // ========================================
-    // Control del Juego
-    // ========================================
     startGame() {
-        this.socket.emit('admin-start-game');
+        const topic = this.quizTopicInput ? this.quizTopicInput.value.trim() : 'all';
+        const count = parseInt(this.questionCountInput.value) || 10;
+
+        let category = topic || 'all';
+
+        // Si el panel IA está visible, significa que es un tema personalizado
+        if (this.aiPanel.style.display === 'block') {
+            category = 'ai-custom';
+        }
+
+        this.socket.emit('admin-start-game', { category, topic, count });
+    }
+
+    generateAIQuestions() {
+        if (!this.hasApiKey) {
+            this.apiConfigModal.style.display = 'block';
+            return;
+        }
+
+        const topic = this.quizTopicInput.value.trim();
+        const count = parseInt(this.aiCountInput.value) || 5;
+
+        if (!topic) {
+            this.aiStatus.textContent = '❌ Por favor, ingresa un tema';
+            this.aiStatus.style.color = 'var(--danger)';
+            return;
+        }
+
+        this.aiStatus.textContent = '✨ Generando preguntas...';
+        this.aiStatus.style.color = 'var(--primary)';
+        this.btnGenerateAI.disabled = true;
+
+        this.socket.emit('admin-generate-ai', { topic, count });
+    }
+
+    updateMaxQuestionsHint(category) {
+        // Estos valores son estáticos basados en el banco questions.js
+        const counts = {
+            'all': 23,
+            'Pedagogía Digital': 5,
+            'Competencias Digitales Docentes': 5,
+            'Herramientas Tecnológicas': 5,
+            'Tendencias Actuales': 8
+        };
+        const max = counts[category] || 23;
+        this.maxQuestionsHint.textContent = max;
+        this.questionCountInput.max = max;
+        if (parseInt(this.questionCountInput.value) > max) {
+            this.questionCountInput.value = max;
+        }
     }
 
     onGameStarted() {
@@ -235,7 +473,7 @@ class EdTechAdmin {
 
     onNewQuestion(data) {
         this.currentQuestionIndex = data.questionIndex;
-        this.totalQuestions = 10;
+        this.totalQuestions = data.totalQuestions || 23;
 
         // Ocultar panel de respuesta
         this.answerRevealPanel.classList.remove('active');
@@ -309,7 +547,7 @@ class EdTechAdmin {
             const percentage = (count / total) * 100;
             const bar = document.getElementById(`bar-${index}`);
             const countEl = document.getElementById(`count-${index}`);
-            
+
             bar.style.width = `${percentage}%`;
             bar.style.background = index === data.correctIndex ? 'var(--accent)' : 'var(--primary)';
             countEl.textContent = count;
@@ -353,7 +591,6 @@ class EdTechAdmin {
             <tr>
                 <td>${index + 1}</td>
                 <td>${player.name}</td>
-                <td>${player.specialty}</td>
                 <td>${player.correctAnswers}/${data.totalQuestions}</td>
                 <td><strong>${player.score}</strong></td>
             </tr>
@@ -384,12 +621,23 @@ class EdTechAdmin {
     }
 
     exportResults() {
+        const players = Array.from(document.querySelectorAll('#final-leaderboard-body tr')).map(tr => {
+            const tds = tr.querySelectorAll('td');
+            return {
+                posicion: tds[0].textContent,
+                nombre: tds[1].textContent,
+                aciertos: tds[2].textContent,
+                puntos: tds[3].textContent
+            };
+        });
+
         const data = {
             fecha: new Date().toLocaleString(),
             juego: 'EdTech Mastery',
             totalParticipantes: parseInt(this.totalPlayersEl.textContent),
             promedioPuntuacion: this.avgScoreEl.textContent,
-            promedioAciertos: this.avgCorrectEl.textContent
+            promedioAciertos: this.avgCorrectEl.textContent,
+            clasificacion: players
         };
 
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -428,6 +676,7 @@ class EdTechAdmin {
             this.updateGameStatus('En Juego');
             this.gameStatus = 'playing';
             this.currentQuestionIndex = data.currentQuestionIndex;
+            this.totalQuestions = data.totalQuestions || 23;
         } else {
             this.showView('lobby');
             this.updateGameStatus('En Lobby');
@@ -435,9 +684,79 @@ class EdTechAdmin {
         }
 
         this.updatePlayersList(data.players || []);
-        
+        this.hasApiKey = data.hasApiKey;
+
+        // Manejar historial de temas
+        if (data.topicHistory) {
+            this.updateTopicHistory(data.topicHistory);
+        }
+
+        // Manejar visualización de IPs disponibles
+        if (data.availableIps && data.availableIps.length > 1) {
+            this.ipSelectorContainer.style.display = 'block';
+
+            // Solo poblar si está vacío para evitar perder la selección actual
+            if (this.ipSelect.options.length === 0) {
+                const savedIp = localStorage.getItem('selectedServerIp');
+                data.availableIps.forEach(ipInfo => {
+                    const option = document.createElement('option');
+                    option.value = ipInfo.address;
+                    option.textContent = `${ipInfo.address} (${ipInfo.interface})`;
+
+                    if (savedIp === ipInfo.address) {
+                        option.selected = true;
+                        this.serverIp = ipInfo.address;
+                    } else if (!savedIp && ipInfo.address === data.currentServerIp) {
+                        option.selected = true;
+                        this.serverIp = ipInfo.address;
+                    }
+                    this.ipSelect.appendChild(option);
+                });
+
+                // Si después de todo no se seleccionó nada, usar el valor del select
+                if (!this.serverIp && this.ipSelect.value) {
+                    this.serverIp = this.ipSelect.value;
+                }
+            }
+        } else {
+            this.ipSelectorContainer.style.display = 'none';
+        }
+
+        // Poblar selector de cursos
+        if (data.availableCourses) {
+            // Guardar selección actual
+            const currentSelectedValue = this.courseSelect.value;
+
+            // Re-poblar siempre (pero limpiar primero el resto de opciones después de la primera)
+            while (this.courseSelect.options.length > 1) {
+                this.courseSelect.remove(1);
+            }
+
+            data.availableCourses.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.id;
+                option.textContent = course.name;
+                this.courseSelect.appendChild(option);
+            });
+
+            // Restaurar selección o usar la que viene del servidor
+            if (data.selectedCourse) {
+                this.courseSelect.value = data.selectedCourse;
+            } else if (currentSelectedValue) {
+                this.courseSelect.value = currentSelectedValue;
+            }
+        }
+
         // Regenerar QR code para asegurar IP correcta
         this.generateQRCode();
+    }
+
+    updateTopicHistory(history) {
+        if (!this.topicHistoryList) return;
+
+        this.topicHistoryList.innerHTML = history.map(topic => `
+            <option value="${topic}">${topic}</option>
+        `).join('');
     }
 
     updateGameStatus(status) {

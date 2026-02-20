@@ -4,15 +4,23 @@ Sistema de juego educativo en tiempo real para red local (LAN) diseñado para el
 
 ## 📋 Características
 
-- **Participación móvil**: Los alumnos responden desde sus teléfonos
-- **Tiempo real**: Respuestas y estadísticas instantáneas
-- **Código QR**: Facilita la conexión de los participantes
-- **Estadísticas completas**: Resultados individuales y grupales
-- **23 preguntas** distribuidas en 4 categorías:
-  - Pedagogía Digital (5)
-  - Competencias Digitales Docentes (5)
-  - Herramientas Tecnológicas (5)
-  - Tendencias Actuales (8)
+- 🎮 **Multijugador Real-Time**: Hasta 100+ alumnos simultáneos.
+- ✨ **Modo IA**: Generación dinámica de preguntas sobre cualquier tema usando Google Gemini.
+- 📊 **Resultados**: Exportación de resultados y análisis de competencias.
+- 📱 **QR Login**: Conexión instantánea sin necesidad de instalar apps.
+- 📡 **LAN Ready**: Funciona en redes locales sin necesidad de internet (excepto para el Modo IA).
+
+## 🛠️ Requisitos e Instalación
+
+1. **Node.js**: Asegúrate de tener instalado Node.js (v16+).
+2. **Dependencias**:
+   ```bash
+   npm install
+   ```
+3. **Modo IA (Opcional)**:
+   - Crea un archivo `.env` en la raíz (puedes usar el ejemplo proporcionado).
+   - Consigue tu API KEY gratuita en [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - Añádela: `GEMINI_API_KEY=tu_api_key`
 
 ## 📁 Estructura del Proyecto
 

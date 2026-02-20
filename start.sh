@@ -54,28 +54,64 @@ fi
 # Obtener dirección IP local
 echo ""
 echo -e "${YELLOW}[3/4]${NC} Detectando red local..."
-LOCAL_IP=$(hostname -I | awk '{print $1}')
-if [ -z "$LOCAL_IP" ]; then
-    LOCAL_IP="localhost"
+
+# Obtener todas las IPs disponibles (excluyendo loopback)
+ips=($(hostname -I))
+
+if [ ${#ips[@]} -eq 0 ]; then
+    LOCAL_IP="127.0.0.1"
+    echo -e "${YELLOW}⚠️ No se detectó red local, usando localhost${NC}"
+elif [ ${#ips[@]} -eq 1 ]; then
+    LOCAL_IP=${ips[0]}
+    echo -e "${GREEN}✅ IP detectada automáticamente:${NC} $LOCAL_IP"
+else
+    echo -e "${BLUE}Se detectaron múltiples direcciones IP. Selecciona la que usará la red local:${NC}"
+    for i in "${!ips[@]}"; do
+        echo -e "   $((i+1))) ${GREEN}${ips[$i]}${NC}"
+    done
+    
+    while true; do
+        read -p "Elige una opción (1-${#ips[@]}): " opt
+        if [[ "$opt" =~ ^[0-9]+$ ]] && [ "$opt" -ge 1 ] && [ "$opt" -le "${#ips[@]}" ]; then
+            LOCAL_IP=${ips[$((opt-1))]}
+            break
+        else
+            echo -e "${RED}Opción inválida. Intenta de nuevo.${NC}"
+        fi
+    done
+    echo -e "${GREEN}✅ Has seleccionado:${NC} $LOCAL_IP"
 fi
-echo -e "${GREEN}✅ IP detectada:${NC} $LOCAL_IP"
+
+# Exportar la IP para que el servidor Node.js la use
+export SERVER_IP=$LOCAL_IP
 
 # Iniciar el servidor
 echo ""
-echo -e "${YELLOW}[4/4]${NC} Iniciando servidor..."
+echo -e "${YELLOW}[4/4]${NC} Preparando inicio..."
 echo ""
+
+ADMIN_URL="http://$LOCAL_IP:3000/admin"
+
+# Intentar abrir el navegador en segundo plano después de un breve retraso
+if command -v xdg-open &> /dev/null; then
+    (sleep 2; xdg-open "$ADMIN_URL") &
+elif command -v gnome-open &> /dev/null; then
+    (sleep 2; gnome-open "$ADMIN_URL") &
+elif command -v x-www-browser &> /dev/null; then
+    (sleep 2; x-www-browser "$ADMIN_URL") &
+fi
+
 echo -e "${BLUE}================================================${NC}"
-echo -e "${BLUE}  ✅ Servidor listo${NC}"
+echo -e "${BLUE}  ✅ Servidor iniciando...${NC}"
 echo -e "${BLUE}================================================${NC}"
 echo ""
 echo -e "${GREEN}📡 ACCESO PARA ALUMNOS (teléfonos):${NC}"
-echo "   http://$LOCAL_IP:3000"
+echo -e "   ${YELLOW}http://$LOCAL_IP:3000${NC}"
 echo ""
-echo -e "${GREEN}🖥️  PANEL DEL PROFESOR:${NC}"
-echo "   http://$LOCAL_IP:3000/admin"
+echo -e "${GREEN}🖥️  PANEL DEL PROFESOR (abriendo...):${NC}"
+echo -e "   ${YELLOW}$ADMIN_URL${NC}"
 echo ""
-echo -e "${YELLOW}💡${NC} Los alumnos deben conectarse a la misma red WiFi"
-echo "   y escanear el código QR que aparecerá en el panel."
+echo -e "${YELLOW}💡${NC} Asegúrate de que los teléfonos estén en la MISMA red WiFi."
 echo ""
 echo -e "${BLUE}================================================${NC}"
 echo ""

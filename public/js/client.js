@@ -14,6 +14,8 @@ class EdTechClient {
         this.totalQuestions = 10;
         this.currentCorrectAnswer = null;
         this.isAnswering = false;
+        this.lastAnswerIndex = null;
+        this.hasAnswered = false;
 
         this.initElements();
         this.initEventListeners();
@@ -37,7 +39,9 @@ class EdTechClient {
         // Formulario
         this.joinForm = document.getElementById('join-form');
         this.playerNameInput = document.getElementById('player-name');
-        this.playerSpecialtySelect = document.getElementById('player-specialty');
+        this.nameInputGroup = document.getElementById('name-input-group');
+        this.nameSelectGroup = document.getElementById('name-select-group');
+        this.playerNameSelect = document.getElementById('player-name-select');
 
         // Elementos de espera
         this.playerGreeting = document.getElementById('player-greeting');
@@ -134,6 +138,10 @@ class EdTechClient {
             this.showError(data.message);
         });
 
+        this.socket.on('course-selected', (data) => {
+            this.updateStudentListUI(data.selectedCourse, data.studentList);
+        });
+
         this.socket.on('game-started', () => {
             this.onGameStarted();
         });
@@ -169,21 +177,44 @@ class EdTechClient {
         });
     }
 
-    // ========================================
-    // Funciones del Juego
-    // ========================================
-    joinGame() {
-        const name = this.playerNameInput.value.trim();
-        const specialty = this.playerSpecialtySelect.value;
+    updateStudentListUI(courseId, students) {
+        if (!courseId || !students || students.length === 0) {
+            this.nameInputGroup.style.display = 'block';
+            this.nameSelectGroup.style.display = 'none';
+            this.playerNameInput.required = true;
+            this.playerNameSelect.required = false;
+        } else {
+            this.nameInputGroup.style.display = 'none';
+            this.nameSelectGroup.style.display = 'block';
+            this.playerNameInput.required = false;
+            this.playerNameSelect.required = true;
 
-        if (!name || !specialty) {
-            alert('Por favor completa todos los campos');
+            // Guardar opción actual si existe
+            const currentVal = this.playerNameSelect.value;
+
+            this.playerNameSelect.innerHTML = '<option value="">Selecciona quién eres</option>' +
+                students.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            if (currentVal) this.playerNameSelect.value = currentVal;
+        }
+    }
+
+    joinGame() {
+        let name = '';
+        if (this.nameSelectGroup.style.display === 'block') {
+            name = this.playerNameSelect.value;
+        } else {
+            name = this.playerNameInput.value.trim();
+        }
+
+        if (!name) {
+            alert('Por favor selecciona o ingresa tu nombre');
             return;
         }
 
         this.socket.emit('join-game', {
             name: name,
-            specialty: specialty
+            specialty: 'Docente' // Valor por defecto ya que se quitó la elección
         });
     }
 
@@ -203,9 +234,11 @@ class EdTechClient {
 
     onNewQuestion(data) {
         this.currentQuestionIndex = data.questionIndex;
-        this.totalQuestions = 10; // Asumiendo 10 preguntas
+        this.totalQuestions = data.totalQuestions || 23;
         this.currentCorrectAnswer = null;
         this.isAnswering = true;
+        this.hasAnswered = false;
+        this.lastAnswerIndex = null;
 
         // Actualizar progreso
         this.questionProgressEl.textContent = `${this.currentQuestionIndex + 1} / ${this.totalQuestions}`;
@@ -219,22 +252,22 @@ class EdTechClient {
 
         // Generar opciones
         this.optionsContainer.innerHTML = '';
-        
+
         const options = ['A', 'B', 'C', 'D'];
-        // Las opciones vendrán en la siguiente versión del servidor
-        // Por ahora creamos botones placeholder
-        for (let i = 0; i < 4; i++) {
+        const questionOptions = data.options || [];
+
+        questionOptions.forEach((optionText, i) => {
             const btn = document.createElement('button');
             btn.className = 'option-btn';
             btn.dataset.index = i;
             btn.innerHTML = `
                 <span class="option-letter">${options[i]}</span>
-                <span class="option-text">Opción ${options[i]}</span>
+                <span class="option-text">${optionText}</span>
             `;
             btn.addEventListener('click', () => this.submitAnswer(i));
             btn.disabled = false;
             this.optionsContainer.appendChild(btn);
-        }
+        });
 
         // Reiniciar temporizador visual
         this.timerTextEl.textContent = data.timeLeft || 30;
@@ -249,9 +282,9 @@ class EdTechClient {
     updateTimerCircle(current, total) {
         const circumference = 2 * Math.PI * 45;
         const offset = circumference - (current / total) * circumference;
-        
+
         this.timerCircleEl.style.strokeDashoffset = offset;
-        
+
         this.timerCircleEl.classList.remove('warning', 'danger');
         if (current <= 5) {
             this.timerCircleEl.classList.add('danger');
@@ -262,8 +295,10 @@ class EdTechClient {
 
     submitAnswer(answerIndex) {
         if (!this.isAnswering) return;
-        
+
         this.isAnswering = false;
+        this.lastAnswerIndex = answerIndex;
+        this.hasAnswered = true;
         this.socket.emit('submit-answer', { answerIndex });
 
         // Deshabilitar todos los botones
@@ -272,14 +307,22 @@ class EdTechClient {
     }
 
     onAnswerReceived(data) {
+        // Guardamos los puntos pero no los mostramos aún
         this.score = this.score + (data.points || 0);
         this.streak = data.streak || 0;
-        this.updateScoreDisplay();
+        // No actualizamos el marcador visible todavía para no dar pistas
 
-        // Mostrar feedback
-        if (data.correct) {
-            this.showFeedback(true, data.points);
-        }
+        // Mostrar pantalla de espera neutral
+        this.showWaitingScreen();
+    }
+
+    showWaitingScreen() {
+        this.showScreen('feedback');
+        this.feedbackIcon.className = 'feedback-icon waiting';
+        this.feedbackIcon.textContent = '⏳';
+        this.feedbackTitle.textContent = 'Respuesta Recibida';
+        this.feedbackPoints.style.display = 'none';
+        this.feedbackExplanation.textContent = 'Esperando a que el tiempo termine para ver el resultado...';
     }
 
     onTimeUp() {
@@ -292,40 +335,34 @@ class EdTechClient {
         // Marcar respuesta correcta
         const buttons = this.optionsContainer.querySelectorAll('.option-btn');
         buttons.forEach((btn, index) => {
-            btn.disabled = false;
+            btn.disabled = true; // Deshabilitar todos
             if (index === data.correctIndex) {
                 btn.classList.add('correct');
+            } else if (index === this.lastAnswerIndex) {
+                btn.classList.add('wrong');
             }
         });
 
-        // Mostrar feedback después de un momento
+        // Mostrar feedback final
         setTimeout(() => {
-            this.showFeedback(false, 0, data.explanation);
+            const isCorrect = this.lastAnswerIndex === data.correctIndex;
+            // Ahora sí actualizamos el marcador visible
+            this.updateScoreDisplay();
+            this.showFeedback(isCorrect, 0, data.explanation, true);
         }, 1500);
     }
 
-    showFeedback(isCorrect, points, explanation) {
+    showFeedback(isCorrect, points, explanation, isReveal = false) {
         this.showScreen('feedback');
 
-        if (isCorrect) {
-            this.feedbackIcon.className = 'feedback-icon correct';
-            this.feedbackIcon.textContent = '✓';
-            this.feedbackTitle.textContent = '¡Correcto!';
-            this.feedbackPoints.textContent = `+${points} puntos`;
-            this.feedbackPoints.style.display = 'block';
-        } else {
-            this.feedbackIcon.className = 'feedback-icon wrong';
-            this.feedbackIcon.textContent = '✗';
-            this.feedbackTitle.textContent = 'Incorrecto';
+        if (isReveal) {
+            this.feedbackTitle.textContent = isCorrect ? '¡Acertaste!' : (this.hasAnswered ? '¡Casi!' : 'Tiempo agotado');
+            this.feedbackIcon.className = isCorrect ? 'feedback-icon correct' : 'feedback-icon wrong';
+            this.feedbackIcon.textContent = isCorrect ? '✓' : '✗';
             this.feedbackPoints.style.display = 'none';
         }
 
         this.feedbackExplanation.textContent = explanation || '';
-
-        // Volver a pregunta después de 2.5 segundos
-        setTimeout(() => {
-            this.showScreen('question');
-        }, 2500);
     }
 
     updateScoreDisplay() {
@@ -351,7 +388,7 @@ class EdTechClient {
         // Determinar nivel
         const percentage = (correctAnswers / this.totalQuestions) * 100;
         const level = this.getLevel(percentage);
-        
+
         this.levelNameEl.textContent = level.name;
         this.levelDescriptionEl.textContent = level.description;
     }
@@ -364,18 +401,18 @@ class EdTechClient {
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
+
             // Easing function
             const eased = 1 - Math.pow(1 - progress, 3);
             const currentScore = Math.round(startScore + (targetScore - startScore) * eased);
-            
+
             this.finalScoreEl.textContent = currentScore;
-            
+
             // Actualizar círculo
             const percentage = (currentScore / (this.totalQuestions * 150)) * 100;
             const circumference = 2 * Math.PI * 45;
             const offset = circumference - (percentage / 100) * circumference;
-            
+
             this.finalScoreCircle.style.strokeDashoffset = offset;
 
             if (progress < 1) {
@@ -417,13 +454,13 @@ class EdTechClient {
             return {
                 name: 'Integrador Novato',
                 icon: '🌿',
-                description: '正在学习。建议关注本教程的基础模块以提升技能。'
+                description: 'Buen progreso. Estás integrando la tecnología en tu práctica. Sigue así.'
             };
         } else {
             return {
                 name: 'Explorador Digital',
                 icon: '🌱',
-                description: '这是一个很好的起点。建议先学习基础知识模块以提升你的技能。'
+                description: 'Este es un excelente punto de partida. Continúa aprendiendo y experimentando con nuevas herramientas.'
             };
         }
     }
